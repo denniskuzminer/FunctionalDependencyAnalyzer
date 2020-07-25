@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Functional Dependency Analyzer</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="./resourses/css/index.css">
+        <script src="C:/Users/denni/Comp Sci/VS Code Projects/FuncDepCalc/Calculate.js"></script>
+    </head>
+    <body>
+        <!--<input type="checkbox" id="check">
+        <label for="check">Menu 
+            <i id="btn"></i>
+        </label>-->
+        <div class="sidebar" id="mainSidebar">
+            <header>Tools</header>
+            <ul>
+                <li><a href="#AttributeClosures" class="option">Attribute Closures</a></li>
+                <li><a href="#PrimeAttributes" class="option">Prime Attributes</a></li>
+                <li><a href="#CanonicalCover" class="option">Canonical Cover</a></li>
+                <li><a href="#3NFDecomposition" class="option">3NF Decomposition</a></li>
+            </ul>
+        </div>
+        <div class="main" id="main">
+            <h1 class="title">
+                Functional Dependency Analyzer
+            </h1>
+            <h3>
+                Enter a set of functional dependencies, and this will calculate all attribute closures, prime attributes, <br>and the canonical cover.
+                Also, this decomposes the given relation into Third Normal Form.
+            </h3>
+            <br>
+            
+            <div>
+                <h4>
+                    Please enter all attributes in the relation. Each attribute should be represented by a letter.<br>
+                    Example: ABCDEF or JKLMNP or ABCDEG
+                </h4>
+                <form action="">
+                    <input type="text" id="full" />
+                </form>
+            </div>
+            
+            <div>
+                <h4>
+                    Please enter all functional dependencies. <br>
+                    Be sure to separate different fucntional dependencies with a semicolon (;). <br>
+                    Be sure to also represent a "determines" (arrow) symbol with a hyphen and a greater than sign (->). <br>
+                    Example: A->B;B->C;D->EF;F->C or J->KLM;KL->MN;K->M;M->J or A->BDG;BG->DE;B->D;D->A or J->KL;L->J;MNP->K;KP->M;LJ->N
+                </h4>
+                <form action="">
+                    <input type="text" id="userInput" />
+                    <button type="submit" onclick="runCalculator()" id="calculate"><span>Calculate </span></button>
+                </form>
+            </div>
+            <script src="./Calculate.js"></script>
+            <script>
+                function runCalculator() {
+                    event.preventDefault();
+                    document.getElementById("mainSidebar").style.width = "250px";
+                    document.getElementById("main").style.marginLeft = "250px";
+                    //document.getElementsByClassName("option").style.width = "100%";
+                    const val = document.getElementById("userInput").value;
+                    const full = document.getElementById("full").value;
+                    document.querySelector("button").onClick = new Calculate(full, val);
+                }
+            </script>
+            
+            <p id="val"></p>
+            <p id="val2"></p>
+            <a name="AttributeClosures"></a>
+            <p id="val3"></p>
+            <a name="PrimeAttributes"></a>
+            <p id="val4"></p>
+            <a name="CanonicalCover"></a>
+            <p id="val5"></p>
+            <a name="3NFDecomposition"></a>
+            <p id="val6"></p>
+            <p id="val7"></p>
+            
+            <!--<div id="output"></div>
+            <script>
+                document.getElementById("output").innerHTML = calc;
+            </script>-->
+        </div>
+        <div id="todo">
+            To-Do in future updates: 
+            <ul>
+                <li id="l1">Show all non-trivial functional dependancies that can be derived</li>
+                <li id="l2">Show whether relation is in 1NF, 2NF, 3NF, and/or BCNF</li>
+                <li id="l3">Implement algorithm to decompose into BCNF and determine whether it is dependency preserving</li>
+            </ul>
+        </div>
+    </body>
+    <footer id="footer">
+        <p>
+            
+        </p> 
+    </footer>
+</html>
