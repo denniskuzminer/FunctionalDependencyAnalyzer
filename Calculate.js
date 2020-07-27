@@ -14,7 +14,7 @@ let primes = '';
 let notPrimes = '';
 let primesOutput = '';
 var canonicalCover;
-var threeNF = [];
+let finalDecomposedCanonicalCover;
 let final3NF;
 let finalCanonicalCover;
 let finalBCNF;
@@ -36,8 +36,8 @@ class Calculate {
         document.getElementById("val4").innerHTML = primesOutput;
         calculateCanonicalCover(full, unformattedInput);
         document.getElementById("val5").innerHTML = canonicalCover;
-        // thirdNormalForm(full, unformattedInput);
-        // document.getElementById("val6").innerHTML = final3NF;
+        thirdNormalForm(full, unformattedInput);
+        document.getElementById("val6").innerHTML = final3NF;
         // BCNF(full, unformattedInput);
         // document.getElementById("val7").innerHTML = finalBCNF;
     }
@@ -348,7 +348,7 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     }
     let numOfFDs = tempCanonicalCover.length - removedFDs.length;
     
-    let finalDecomposedCanonicalCover = new Array(numOfFDs).fill(0).map(() => new Array(2).fill(''));
+    finalDecomposedCanonicalCover = new Array(numOfFDs).fill(0).map(() => new Array(2).fill(''));
     for(var i = 0; i < tempCanonicalCover.length; i++) {
         if(!(removedFDs.includes(i))) {
             finalDecomposedCanonicalCover[i][0] = tempCanonicalCover[i][0];
@@ -557,13 +557,13 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     //     canonicalCover += `<br/>${finalCanonicalCover[i][0]} -> ${finalCanonicalCover[i][1]}`; 
     // }
 }
-
+let threeNF = [];
 const thirdNormalForm = (full, unformattedInput) => {
     
-    for(var i = 0; i < finalCanonicalCover.length; i++) {
-        threeNF[i] = `${finalCanonicalCover[i][0]}${finalCanonicalCover[i][1]}`;
+    for(var i = 0; i < finalDecomposedCanonicalCover.length; i++) {
+        threeNF.push(`${finalDecomposedCanonicalCover[i][0]}${finalDecomposedCanonicalCover[i][1]}`);
     }
-
+    
     let hasSuperkey = false;
     for(var i = 0; i < threeNF.length; i++) {
         index = combi.indexOf(threeNF[i]);
@@ -572,6 +572,7 @@ const thirdNormalForm = (full, unformattedInput) => {
             break;
         }
     }  
+    
     let firstKey = '';
     for(var i = 0; i < combi.length; i++) {
         if(determinedBy[i] == full) {
@@ -591,11 +592,11 @@ const thirdNormalForm = (full, unformattedInput) => {
     }
     
     
-    final3NF = `The third normal form decomposition using canonical cover is: `;
+    final3NF = `<br/>The third normal form decomposition using canonical cover is: `;
     for(var i = 0; i < threeNF.length; i++) {   
         final3NF += `<br/>R${i+1} = ${threeNF[i]}`; // with FDs ${threeNF[i]}
         if(!(i == threeNF.length-1)) {
-            final3NF += ` with FD: ${finalCanonicalCover[i][0]} -> ${finalCanonicalCover[i][1]}`;
+            final3NF += ` with FD: ${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`;
         }
         else {
             final3NF += ` with no FDs`;
