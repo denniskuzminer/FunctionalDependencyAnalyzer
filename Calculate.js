@@ -36,8 +36,8 @@ class Calculate {
         document.getElementById("val4").innerHTML = primesOutput;
         calculateCanonicalCover(full, unformattedInput);
         document.getElementById("val5").innerHTML = canonicalCover;
-        thirdNormalForm(full, unformattedInput);
-        document.getElementById("val6").innerHTML = final3NF;
+        // thirdNormalForm(full, unformattedInput);
+        // document.getElementById("val6").innerHTML = final3NF;
         // BCNF(full, unformattedInput);
         // document.getElementById("val7").innerHTML = finalBCNF;
     }
@@ -110,6 +110,7 @@ function substrings(str1)
 
 //Display all of the relations for each attribute
 const findAttributeClosure = (full, unformattedInput) => {
+    
     for(var i = 0; i < combi.length; i++) {
         determinedBy.push(combi[i]);
     }
@@ -156,7 +157,7 @@ const findAttributeClosure = (full, unformattedInput) => {
 
     for(var i= 0; i < combi.length; i++) {
         for(var j= 0; j < combi.length; j++) {
-            if(determinedBy[j].includes(combi[i])) {
+            if(includesInAnyOrder(combi[i], determinedBy[j])) {
             //if(unformattedInput[i][0] === unformattedInput[j][1]) {
                 // index = combi.indexOf(combi[j]);
                 determinedBy[j] += determinedBy[i];
@@ -192,6 +193,9 @@ const findAttributeClosure = (full, unformattedInput) => {
             lengths+=(combi[i].length).toString();
         }  
     }
+
+
+
     for(var i = 0; i < combi.length; i++) {
         
         closuresStr += `<br/>(${combi[i]})﹢ -> ${determinedBy[i]}`; 
@@ -228,7 +232,7 @@ const findPrimes = (full, unformattedInput) => {
 }
 
 
-//http://fac.ksu.edu.sa/sites/default/files/D-%20Computing%20Canonical%20Cover.pdf
+
 const calculateCanonicalCover = (full, unformattedInput) => {
     //Finds totLength of all RHS's
     let totLength = 0;
@@ -275,17 +279,154 @@ const calculateCanonicalCover = (full, unformattedInput) => {
         return a.indexOf(e, i+1) === -1;
     }).reverse().map(JSON.parse);
     
+
     //Step 3: Create attribute closures for the new set of decomposed attributes created by Step 2 
     // Then remove one of the FDs. If the closures of new LHS's are the same without the removed, then remove the FD entirely
+    let removedFDs = [];
+    var tempClosures = new Array(tempCanonicalCover.length-1).fill('');
+    let removedCanonicalCover = new Array(tempCanonicalCover.length-1).fill(0).map(() => new Array(2).fill(''));
+    for(var m = 0; m < tempCanonicalCover.length; m++) {
+        //Deletes an FD
+        removedCanonicalCover = removeFD(tempCanonicalCover, m);
+        //Reflexivity and all direct FDs
+        for(var i = 0; i < removedCanonicalCover.length; i++) {
+            tempClosures[i] = (removedCanonicalCover[i][0] + removedCanonicalCover[i][1]);
+            tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+            tempClosures[i] = sortString(tempClosures[i]);
+        }
+        //Check for the first layer of transitivity
+        for(var i= 0; i < removedCanonicalCover.length; i++) {
+            for(var j= 0; j < removedCanonicalCover.length; j++) {
+                if(includesInAnyOrder(removedCanonicalCover[i][0], removedCanonicalCover[j][1])) {
+                    tempClosures[j] += removedCanonicalCover[i][1];
+                    tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
+                    tempClosures[j] = sortString(tempClosures[j]);
+                }
+            }
+        }
+        //Check for the remaining layers of transitivity
+        for(var i= 0; i < tempClosures.length; i++) {
+            for(var j= 0; j < tempClosures.length; j++) {
+                if(includesInAnyOrder(tempClosures[i], tempClosures[j])) {
+                    tempClosures[j] += tempClosures[i];
+                    tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
+                    tempClosures[j] = sortString(tempClosures[j]);
+                }
+            }
+        }
+        // This appends all the single letter attributes closures to x-
+        //letter attribute closures.
+        for(var i = 0; i < removedCanonicalCover.length; i++) {
+            if(removedCanonicalCover[i][0].length > 1) {
+                for(var j = 0; j < removedCanonicalCover[i][0].length; j++) {
+                    let tempChar = removedCanonicalCover[i][0].charAt(j);
+                    for(var k = 0; k < removedCanonicalCover.length; k++) {
+                        if(removedCanonicalCover[k][0] === tempChar) {
+                            index = k;
+                        }
+                    } 
+                    tempClosures[i] += tempClosures[index];
+                }
+                tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+                tempClosures[i] = sortString(tempClosures[i]);
+            }
+        }
+        //Check to see the indices from tempCanonicalCover that need to be removed
+        var needToRemove = true;
+        let canonicalCover = '';
+        for(var i = 0; i < tempClosures.length; i++) {
+            index = combi.indexOf(removedCanonicalCover[i][0]);
+            if(determinedBy[index] == tempClosures[i]) {
+                needToRemove = needToRemove && true;
+            } else {
+                needToRemove = needToRemove && false;
+            }
+        }
+        if(needToRemove) {
+            removedFDs.push(m);
+        }
+    }
+    let numOfFDs = tempCanonicalCover.length - removedFDs.length;
+    
+    let finalDecomposedCanonicalCover = new Array(numOfFDs).fill(0).map(() => new Array(2).fill(''));
+    for(var i = 0; i < tempCanonicalCover.length; i++) {
+        if(!(removedFDs.includes(i))) {
+            finalDecomposedCanonicalCover[i][0] = tempCanonicalCover[i][0];
+            finalDecomposedCanonicalCover[i][1] = tempCanonicalCover[i][1];
+        }
+    }
+    
+    
 
-    let tempClosures;
+    // for(var i = 0; i < tempCanonicalCover.length; i++) {   
+    //     canonicalCover += `<br/>${tempCanonicalCover[i][0]} -> ${tempCanonicalCover[i][1]}`; 
+    // }
+    // canonicalCover += `<br/>`;
+    // for(var i = 0; i < removedCanonicalCover.length; i++) {   
+    //     canonicalCover += `<br/>${removedCanonicalCover[i][0]} -> ${removedCanonicalCover[i][1]} + ${tempClosures[i]}`; 
+    // }
+    // document.getElementById("val5").innerHTML = `${canonicalCover}`;
+    // break;
+
+
+    
+    
+
+    // Step 4: Combine the RHS's of any FDs with the same LHS
+    let uniqueElems = [];
+    for(var i = 0; i < finalDecomposedCanonicalCover.length; i++) {
+        uniqueElems.push(finalDecomposedCanonicalCover[i][0]);
+    }
+    uniqueElems = uniqueElems.filter(distinct);
+    for(var i = 0; i < finalDecomposedCanonicalCover.length; i++) {
+        for(var j = 0; j < finalDecomposedCanonicalCover.length; j++) {
+            if(finalDecomposedCanonicalCover[i][0] == finalDecomposedCanonicalCover[j][0]) {
+                finalDecomposedCanonicalCover[i][1] += finalDecomposedCanonicalCover[j][1];
+                finalDecomposedCanonicalCover[i][1] = removeDuplicateCharacters(finalDecomposedCanonicalCover[i][1]);
+                finalDecomposedCanonicalCover[i][1] = sortString(finalDecomposedCanonicalCover[i][1]);
+            }
+        }
+    }
+    finalDecomposedCanonicalCover = finalDecomposedCanonicalCover.map(JSON.stringify).reverse().filter(function (e, i, a) {
+        return a.indexOf(e, i+1) === -1;
+    }).reverse().map(JSON.parse);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+    /*
     let tempUniqueElemsClosures = [];
     var uniqueElemsClosures = [];
     var uniqueElems = []; 
+    var reducedCover = tempCanonicalCover;
     for(var i = 0; i < tempCanonicalCover.length; i++) {
-        
         uniqueElems[i] = tempCanonicalCover[i][0];
-        // document.getElementById("val5").innerHTML = `hi `;
     }
     
     uniqueElems = uniqueElems.filter(distinct);
@@ -293,11 +434,10 @@ const calculateCanonicalCover = (full, unformattedInput) => {
         uniqueElemsClosures[i] = determinedBy[combi.indexOf(uniqueElems[i])];
     }
     let removedCanonicalCover = new Array(totLength-1).fill(0).map(() => new Array(2).fill(''));
-    
+   
     for(var m = 0; m < tempCanonicalCover.length; m++) {
-        //let holder = tempCanonicalCover;
-        removedCanonicalCover = deleteRow(tempCanonicalCover, m);
-        
+        removedCanonicalCover = deleteRow(tempCanonicalCover, m); 
+        //document.getElementById("val8").innerHTML = `${m} <br/>${tempCanonicalCover}`;
         // This calculates a tempCanonicalCover
         for(var i = 0; i < removedCanonicalCover.length; i++) {
             index = uniqueElems.indexOf(removedCanonicalCover[i][0]);
@@ -350,25 +490,6 @@ const calculateCanonicalCover = (full, unformattedInput) => {
                 }
                 
             }
-            //document.getElementById("val5").innerHTML = `hi `;
-            /*for(var q= 0; q < uniqueElems.length; q++) {
-                //document.getElementById("val5").innerHTML = `hi ${tempUniqueElemsClosures[f]} ${uniqueElems[i]}`;
-                document.getElementById("val5").innerHTML = `hi ${tempUniqueElemsClosures[q]} ${uniqueElems[i]}`;
-                if(tempUniqueElemsClosures[q].includes(uniqueElems[i])) {
-                //if(unformattedInput[i][0] === unformattedInput[j][1]) {
-                    // index = combi.indexOf(combi[j]);
-                    
-                    tempUniqueElemsClosures[q] += tempUniqueElemsClosures[i];
-                    tempUniqueElemsClosures[q] = removeDuplicateCharacters(tempUniqueElemsClosures[q]);
-                    tempUniqueElemsClosures[q] = sortString(tempUniqueElemsClosures[q]);
-                    //append unformattedInput[i][1] to the closure of fdjs lhs
-                }
-                // if(lhs of fdi === rhs of fdj) {
-                //     append rhs of fdi to the closure of fdjs lhs
-                // }
-                
-            }
-            */
         }
         
         for(var i = 0; i < uniqueElems.length; i++) {
@@ -398,11 +519,11 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     //     tempUniqueElemsClosures = tempUniqueElemsClosures.filter(x => x !== undefined);
     // }
 
-    finalCanonicalCover = new Array(uniqueElems.length).fill(0).map(() => new Array(2).fill(''));
-    for(var i = 0; i < uniqueElems.length; i++) {
-        finalCanonicalCover[i][0] = uniqueElems[i];
+    finalCanonicalCover = new Array(tempCanonicalCover.length).fill(0).map(() => new Array(2).fill(''));
+    for(var i = 0; i < tempCanonicalCover.length; i++) {
+        finalCanonicalCover[i][0] = tempCanonicalCover[i][0];
     }
-    document.getElementById("val5").innerHTML = tempCanonicalCover;
+    
     // Step 4: Consolidate all the FDs with the same LHS
     for(var i = 0; i < tempCanonicalCover.length; i++) {
         for(var j = i; j < tempCanonicalCover.length; j++) {
@@ -413,26 +534,28 @@ const calculateCanonicalCover = (full, unformattedInput) => {
                 finalCanonicalCover[index][1] = sortString(finalCanonicalCover[index][1]);
             }
         }
-    }
-    /*for(all of the split fds) {
-        for(all of the split fds) {
-            if(LHSof FD[i] == LHSofFD[j]) {
-                combine the RHS's of both 
-            }
-        }
     }*/
+    // for(all of the split fds) {
+    //     for(all of the split fds) {
+    //         if(LHSof FD[i] == LHSofFD[j]) {
+    //             combine the RHS's of both 
+    //         }
+    //     }
+    // }
     
     // Print Fmin
-    canonicalCover = `The canonical or minimum spanning cover for this relation is: `
-    // for(var i = 0; i < tempCanonicalCover.length; i++) {   
-    //     canonicalCover += `<br/>${tempCanonicalCover[i][0]} -> ${tempCanonicalCover[i][1]}`; 
-    // }
+    canonicalCover = `<br/>The canonical or minimum spanning cover for this relation is: `
+    for(var i = 0; i < finalDecomposedCanonicalCover.length; i++) {   
+        canonicalCover += `<br/>${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`; 
+    }
+    // canonicalCover += `<br/>uniqueElems: <br/>`;
     // for(var i = 0; i < uniqueElems.length; i++) {   
     //     canonicalCover += `<br/>${uniqueElems[i]} -> ${tempUniqueElemsClosures[i]}`; 
     // }
-    for(var i = 0; i < finalCanonicalCover.length; i++) {   
-        canonicalCover += `<br/>${finalCanonicalCover[i][0]} -> ${finalCanonicalCover[i][1]}`; 
-    }
+    // canonicalCover += `<br/>finalCanonicalCover: <br/>`;
+    // for(var i = 0; i < finalCanonicalCover.length; i++) {   
+    //     canonicalCover += `<br/>${finalCanonicalCover[i][0]} -> ${finalCanonicalCover[i][1]}`; 
+    // }
 }
 
 const thirdNormalForm = (full, unformattedInput) => {
@@ -534,7 +657,18 @@ function removeItemOnce(arr, value) {
 }
 
 const removeFD = (canonicalCovers, i) => {
-    return canonicalCovers.slice(0, i) + canonicalCovers.slice(i+1, canonicalCovers.length);
+    let newArr = new Array(canonicalCovers.length-1).fill(0).map(() => new Array(2).fill(''));
+    for(var j = 0; j < canonicalCovers.length; j++) {
+        if(j < i) {
+            newArr[j][0] = canonicalCovers[j][0];
+            newArr[j][1] = canonicalCovers[j][1];
+        }
+        if(j > i) {
+            newArr[j-1][0] = canonicalCovers[j][0];
+            newArr[j-1][1] = canonicalCovers[j][1];
+        }
+    }
+    return newArr;
 }
 
 function deleteRow(arr, row) {
