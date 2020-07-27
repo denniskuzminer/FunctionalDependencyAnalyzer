@@ -286,76 +286,81 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     var tempClosures = new Array(tempCanonicalCover.length-1).fill('');
     let removedCanonicalCover = new Array(tempCanonicalCover.length-1).fill(0).map(() => new Array(2).fill(''));
     for(var m = 0; m < tempCanonicalCover.length; m++) {
-        //Deletes an FD
-        removedCanonicalCover = removeFD(tempCanonicalCover, m);
-        //Reflexivity and all direct FDs
-        for(var i = 0; i < removedCanonicalCover.length; i++) {
-            tempClosures[i] = (removedCanonicalCover[i][0] + removedCanonicalCover[i][1]);
-            tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
-            tempClosures[i] = sortString(tempClosures[i]);
-        }
-        //Check for the first layer of transitivity
-        for(var i= 0; i < removedCanonicalCover.length; i++) {
-            for(var j= 0; j < removedCanonicalCover.length; j++) {
-                if(includesInAnyOrder(removedCanonicalCover[i][0], removedCanonicalCover[j][1])) {
-                    tempClosures[j] += removedCanonicalCover[i][1];
-                    tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
-                    tempClosures[j] = sortString(tempClosures[j]);
-                }
-            }
-        }
-        //Check for the remaining layers of transitivity
-        for(var i= 0; i < tempClosures.length; i++) {
-            for(var j= 0; j < tempClosures.length; j++) {
-                if(includesInAnyOrder(tempClosures[i], tempClosures[j])) {
-                    tempClosures[j] += tempClosures[i];
-                    tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
-                    tempClosures[j] = sortString(tempClosures[j]);
-                }
-            }
-        }
-        // This appends all the single letter attributes closures to x-
-        //letter attribute closures.
-        for(var i = 0; i < removedCanonicalCover.length; i++) {
-            if(removedCanonicalCover[i][0].length > 1) {
-                for(var j = 0; j < removedCanonicalCover[i][0].length; j++) {
-                    let tempChar = removedCanonicalCover[i][0].charAt(j);
-                    for(var k = 0; k < removedCanonicalCover.length; k++) {
-                        if(removedCanonicalCover[k][0] === tempChar) {
-                            index = k;
-                        }
-                    } 
-                    tempClosures[i] += tempClosures[index];
-                }
+        if(includesInAnyOrder(tempCanonicalCover[m][1], tempCanonicalCover[m][0])) {
+            removedFDs.push(m);
+        } else {
+            //Deletes an FD
+            removedCanonicalCover = removeFD(tempCanonicalCover, m);
+            //Reflexivity and all direct FDs
+            for(var i = 0; i < removedCanonicalCover.length; i++) {
+                tempClosures[i] = (removedCanonicalCover[i][0] + removedCanonicalCover[i][1]);
                 tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
                 tempClosures[i] = sortString(tempClosures[i]);
             }
-        }
-        //Check to see the indices from tempCanonicalCover that need to be removed
-        var needToRemove = true;
-        let canonicalCover = '';
-        for(var i = 0; i < tempClosures.length; i++) {
-            index = combi.indexOf(removedCanonicalCover[i][0]);
-            if(determinedBy[index] == tempClosures[i]) {
-                needToRemove = needToRemove && true;
-            } else {
-                needToRemove = needToRemove && false;
+            //Check for the first layer of transitivity
+            for(var i= 0; i < removedCanonicalCover.length; i++) {
+                for(var j= 0; j < removedCanonicalCover.length; j++) {
+                    if(includesInAnyOrder(removedCanonicalCover[i][0], removedCanonicalCover[j][1])) {
+                        tempClosures[j] += removedCanonicalCover[i][1];
+                        tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
+                        tempClosures[j] = sortString(tempClosures[j]);
+                    }
+                }
             }
-        }
-        if(needToRemove) {
-            removedFDs.push(m);
+            //Check for the remaining layers of transitivity
+            for(var i= 0; i < tempClosures.length; i++) {
+                for(var j= 0; j < tempClosures.length; j++) {
+                    if(includesInAnyOrder(tempClosures[i], tempClosures[j])) {
+                        tempClosures[j] += tempClosures[i];
+                        tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
+                        tempClosures[j] = sortString(tempClosures[j]);
+                    }
+                }
+            }
+            // This appends all the single letter attributes closures to x-
+            //letter attribute closures.
+            for(var i = 0; i < removedCanonicalCover.length; i++) {
+                if(removedCanonicalCover[i][0].length > 1) {
+                    for(var j = 0; j < removedCanonicalCover[i][0].length; j++) {
+                        let tempChar = removedCanonicalCover[i][0].charAt(j);
+                        for(var k = 0; k < removedCanonicalCover.length; k++) {
+                            if(removedCanonicalCover[k][0] === tempChar) {
+                                index = k;
+                            }
+                        } 
+                        tempClosures[i] += tempClosures[index];
+                    }
+                    tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+                    tempClosures[i] = sortString(tempClosures[i]);
+                }
+            }
+            //Check to see the indices from tempCanonicalCover that need to be removed
+            var needToRemove = true;
+            let canonicalCover = '';
+            for(var i = 0; i < tempClosures.length; i++) {
+                index = combi.indexOf(removedCanonicalCover[i][0]);
+                if(determinedBy[index] == tempClosures[i]) {
+                    needToRemove = needToRemove && true;
+                } else {
+                    needToRemove = needToRemove && false;
+                }
+            }
+            if(needToRemove) {
+                removedFDs.push(m);
+            }
         }
     }
     let numOfFDs = tempCanonicalCover.length - removedFDs.length;
     
     finalDecomposedCanonicalCover = new Array(numOfFDs).fill(0).map(() => new Array(2).fill(''));
+    let w = 0
     for(var i = 0; i < tempCanonicalCover.length; i++) {
         if(!(removedFDs.includes(i))) {
-            finalDecomposedCanonicalCover[i][0] = tempCanonicalCover[i][0];
-            finalDecomposedCanonicalCover[i][1] = tempCanonicalCover[i][1];
+            finalDecomposedCanonicalCover[w][0] = tempCanonicalCover[i][0];
+            finalDecomposedCanonicalCover[w][1] = tempCanonicalCover[i][1];
+            w++;
         }
     }
-    
     
 
     // for(var i = 0; i < tempCanonicalCover.length; i++) {   
@@ -390,7 +395,6 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     finalDecomposedCanonicalCover = finalDecomposedCanonicalCover.map(JSON.stringify).reverse().filter(function (e, i, a) {
         return a.indexOf(e, i+1) === -1;
     }).reverse().map(JSON.parse);
-
 
 
 
@@ -594,12 +598,14 @@ const thirdNormalForm = (full, unformattedInput) => {
     
     final3NF = `<br/>The third normal form decomposition using canonical cover is: `;
     for(var i = 0; i < threeNF.length; i++) {   
-        final3NF += `<br/>R${i+1} = ${threeNF[i]}`; // with FDs ${threeNF[i]}
-        if(!(i == threeNF.length-1)) {
-            final3NF += ` with FD: ${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`;
-        }
-        else {
-            final3NF += ` with no FDs`;
+        if(threeNF[i] != '') {
+            final3NF += `<br/>R${i+1} = ${threeNF[i]}`; // with FDs ${threeNF[i]}
+            if(!(i == threeNF.length-1)) {
+                final3NF += ` with FD: ${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`;
+            }
+            else {
+                final3NF += ` with no FDs`;
+            }
         }
     }
 }
