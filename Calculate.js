@@ -622,17 +622,11 @@ const thirdNormalForm = (full, unformattedInput) => {
     for(var i = 0; i < threeNF.length; i++) {
         for(var j = 0; j < threeNF.length; j++) {
             if(includesInAnyOrder(threeNF[j], threeNF[i]) && i != j) {
-                threeNF = removeItemOnce(threeNF, j);
+                threeNF[j] = '';
             }
         }
     }
-    for(var i = 0; i < threeNF.length; i++) {
-        for(var j = 0; j < threeNF.length; j++) {
-            if(includesInAnyOrder(threeNF[j], threeNF[i]) && i != j) {
-                threeNF = removeItemOnce(threeNF, i);
-            }
-        }
-    }
+    
     
     final3NF = `<br/>The third normal form decomposition using canonical cover is: `;
     for(var i = 0; i < threeNF.length; i++) {   
