@@ -25,9 +25,11 @@ class Calculate {
         this.full = full;
         this.value = value;
         document.getElementById("val").innerHTML = "Your input is: " + value;
-        validateInput(full, value);
         full = full.toUpperCase();
         value = value.toUpperCase();
+        value = value.split(" ").join("");
+        full = full.split(" ").join("");
+        parseInput(full, value);
         document.getElementById("val2").innerHTML = "Your parsed input is: " + display + "<br>Your relation consists of: " + full;
         substrings(full);
         calculate(full, unformattedInput);
@@ -41,16 +43,6 @@ class Calculate {
         // BCNF(full, unformattedInput);
         // document.getElementById("val7").innerHTML = finalBCNF;
     }
-}
-
-
-//This should check if the input is in the correct format
-
-const validateInput = (full, value) => {
-
-
-
-    parseInput(full, value);
 }
 
 // This should handle all of the parsing
@@ -155,6 +147,23 @@ const findAttributeClosure = (full, unformattedInput) => {
         }
     }
 
+    /*for(var i= 0; i < unformattedInput.length; i++) {
+        for(var j= 0; j < unformattedInput[i][0].length; j++) {
+            for(var k= 0; k < unformattedInput[i][0].length; k++) {
+                let substring = unformattedInput[i][0].substring(j, k);
+                if(includesInAnyOrder(substring, unformattedInput[i][1])) {
+                    var start = unformattedInput[i][0].indexOf(substring);
+                    var end = start + substring.length;
+                    var tempAddition = unformattedInput[i][0].substring(0, start - 1) + unformattedInput[i][0].substring(end);
+                    index = combi.indexOf(tempAddition);
+                    determinedBy[index] += unformattedInput[i][1];
+                    determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
+                    determinedBy[index] = sortString(determinedBy[index]);
+                }
+            }
+        }
+    }*/
+
     for(var i= 0; i < combi.length; i++) {
         for(var j= 0; j < combi.length; j++) {
             if(includesInAnyOrder(combi[i], determinedBy[j])) {
@@ -186,6 +195,7 @@ const findAttributeClosure = (full, unformattedInput) => {
             determinedBy[i] = sortString(determinedBy[i]);
         }
     }
+
 
     let lengths = '';
     for(var i = 0; i < combi.length; i++) {
@@ -264,16 +274,21 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     
     //Step 2: Find extraneous attributes on LHS in each tempCanonicalCover and remove duplicates
     for(var i = 0; i < tempCanonicalCover.length; i++) {
+        var doesInclude = false;
         for(var j = 0; j < tempCanonicalCover[i][0].length; j++) {
             if(tempCanonicalCover[i][0].length > 1) {
                 smallerLHS = removeCharacter(tempCanonicalCover[i][0], j);//`${tempCanonicalCover[i][0].substring(0, j)}${tempCanonicalCover[i][0].substring(j+1)}`; 
                 //document.getElementById("val5").innerHTML = `hi ${smallerLHS}`;
                 smallerLHS = sortString(smallerLHS);
-                if(determinedBy[combi.indexOf(smallerLHS)].includes(tempCanonicalCover[i][1])) {
-                    tempCanonicalCover[i][0] = smallerLHS;
+                if(includesInAnyOrder(tempCanonicalCover[i][1], determinedBy[combi.indexOf(smallerLHS)])) {
+                    doesInclude = true;
                 }
             }
+            if(doesInclude) {
+                tempCanonicalCover[i][0] = smallerLHS;
+            }
         }
+        
     }
     tempCanonicalCover = tempCanonicalCover.map(JSON.stringify).reverse().filter(function (e, i, a) {
         return a.indexOf(e, i+1) === -1;
@@ -334,6 +349,22 @@ const calculateCanonicalCover = (full, unformattedInput) => {
                     tempClosures[i] = sortString(tempClosures[i]);
                 }
             }
+            /*for(var i= 0; i < removedCanonicalCover.length; i++) {
+                for(var j= 0; j < removedCanonicalCover[i][0].length; j++) {
+                    for(var k= 0; k < removedCanonicalCover[i][0].length; k++) {
+                        let substring = removedCanonicalCover[i][0].substring(j, k);
+                        if(includesInAnyOrder(substring, removedCanonicalCover[i][1])) {
+                            var start = removedCanonicalCover[i][0].indexOf(substring);
+                            var end = start + substring.length;
+                            var tempAddition = removedCanonicalCover[i][0].substring(0, start - 1) + removedCanonicalCover[i][0].substring(end);
+                            // index = combi.indexOf(tempAddition);
+                            tempClosures[i] += removedCanonicalCover[i][1];
+                            tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+                            tempClosures[i] = sortString(tempClosures[i]);
+                        }
+                    }
+                }
+            }*/
             //Check to see the indices from tempCanonicalCover that need to be removed
             var needToRemove = true;
             let canonicalCover = '';
@@ -361,6 +392,7 @@ const calculateCanonicalCover = (full, unformattedInput) => {
             w++;
         }
     }
+    
     
 
     // for(var i = 0; i < tempCanonicalCover.length; i++) {   
@@ -594,18 +626,24 @@ const thirdNormalForm = (full, unformattedInput) => {
             }
         }
     }
-    
+    for(var i = 0; i < threeNF.length; i++) {
+        for(var j = 0; j < threeNF.length; j++) {
+            if(includesInAnyOrder(threeNF[j], threeNF[i]) && i != j) {
+                threeNF = removeItemOnce(threeNF, i);
+            }
+        }
+    }
     
     final3NF = `<br/>The third normal form decomposition using canonical cover is: `;
     for(var i = 0; i < threeNF.length; i++) {   
         if(threeNF[i] != '') {
             final3NF += `<br/>R${i+1} = ${threeNF[i]}`; // with FDs ${threeNF[i]}
-            if(!(i == threeNF.length-1)) {
-                final3NF += ` with FD: ${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`;
-            }
-            else {
-                final3NF += ` with no FDs`;
-            }
+            // if(!(i == threeNF.length-1)) {
+            //     final3NF += ` with FD: ${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`;
+            // }
+            // else {
+            //     final3NF += ` with no FDs`;
+            // }
         }
     }
 }

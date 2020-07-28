@@ -61,12 +61,39 @@
             <script>
                 function runCalculator() {
                     event.preventDefault();
-                    document.getElementById("mainSidebar").style.width = "250px";
-                    document.getElementById("main").style.marginLeft = "250px";
-                    //document.getElementsByClassName("option").style.width = "100%";
                     const val = document.getElementById("userInput").value;
                     const full = document.getElementById("full").value;
-                    document.querySelector("button").onClick = new Calculate(full, val);
+                    if(validateForm(full, val) == 'valid') {
+                        document.getElementById("mainSidebar").style.width = "250px";
+                        document.getElementById("main").style.marginLeft = "250px";
+                        //document.getElementsByClassName("option").style.width = "100%";
+                        document.querySelector("button").onClick = new Calculate(full, val);
+                    } else {
+                        document.getElementById("val").innerHTML = `${validateForm(full, val)}`;
+                    }
+                }
+                function validateForm(full, val) {
+                    val = val.split(" ").join("");
+                    full = full.split(" ").join("");
+                    full = full.toUpperCase();
+                    val = val.toUpperCase();
+                    for(var i = 0; i < full.length; i++) {
+                        if(!isLetter(full.charAt(i))) {
+                            return 'Please input only uppercase or lowercase letters into the first field.';
+                        }
+                    }
+                    for(var i = 0; i < val.length; i++) {
+                        if(!isLetter(val.charAt(i)) && val.charAt(i) != '-' && val.charAt(i) != '>' && val.charAt(i) != ';') {
+                            return 'Please input only uppercase or lowercase letters or the \"->\" or \";\" symbol into the second field.';
+                        }
+                        if(val.charAt(i) != '-' && val.charAt(i) != '>' && val.charAt(i) != ';' && full.indexOf(val.charAt(i)) == -1) {
+                            return 'Please input only characters that are present in the first field into the second.';
+                        }
+                    }
+                    return 'valid'; 
+                }
+                function isLetter(c) {
+                    return c.toLowerCase() != c.toUpperCase();
                 }
             </script>
             
