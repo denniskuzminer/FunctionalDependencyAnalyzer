@@ -5,8 +5,6 @@ let unformattedInput;
 let display;
 var combi = [];
 var determinedBy = [];
-let combined = '';
-//var closuresArr = [];
 var closuresStr = "";
 let index = '';
 var strCombs = [];
@@ -18,6 +16,10 @@ let finalDecomposedCanonicalCover;
 let final3NF;
 let finalCanonicalCover;
 let finalBCNF;
+let highestNormalForm = '<br/>Highest Normalized Form (1NF, 2NF, 3NF): <br/>';
+let is1NF = false; 
+let is2NF = false; 
+let is3NF = false; 
 
 
 class Calculate {
@@ -29,17 +31,25 @@ class Calculate {
         value = value.toUpperCase();
         value = value.split(" ").join("");
         full = full.split(" ").join("");
+        full = sortString(full);
         parseInput(full, value);
         document.getElementById("val2").innerHTML = "Your parsed input is: " + display + "<br>Your relation consists of: " + full;
-        substrings(full);
-        calculate(full, unformattedInput);
+        combi = substrings(full);
+        determinedBy = findAttributeClosure(full, unformattedInput);
+        displayClosure(full);
         document.getElementById("val3").innerHTML = closuresStr;
-        findPrimes(full, unformattedInput);
+        displayPrimes(full);
         document.getElementById("val4").innerHTML = primesOutput;
         calculateCanonicalCover(full, unformattedInput);
         document.getElementById("val5").innerHTML = canonicalCover;
-        thirdNormalForm(full, unformattedInput);
-        document.getElementById("val6").innerHTML = final3NF;
+        calculateHighestNormalForm(full, unformattedInput);
+        document.getElementById("val6").innerHTML = highestNormalForm;
+        if(!is3NF) {
+            thirdNormalForm(full, unformattedInput);
+            document.getElementById("val7").innerHTML = final3NF;
+        } else {
+            document.getElementById("val7").innerHTML = '<br/>As this relation is already in Third Normal Form, there is no need to decompose it.';
+        }
         // BCNF(full, unformattedInput);
         // document.getElementById("val7").innerHTML = finalBCNF;
     }
@@ -63,12 +73,9 @@ const parseInput = (full, value) => {
     }
 }
 
-const calculate = (full, unformattedInput) => {
-    findAttributeClosure(full, unformattedInput);
-}
-
 function substrings(str1)
 {
+    var finalArr = [];
     var array1 = [];
     for (var x = 0, y=1; x < str1.length; x++,y++) 
     {
@@ -87,157 +94,109 @@ function substrings(str1)
         }
         if (temp !== "")
         {
-            combi.push(temp);
+            finalArr.push(temp);
         }
     }
-    combi = combi.sort(function(a, b) {
+    finalArr = finalArr.sort(function(a, b) {
         return a.length - b.length || // sort by length, if equal then
                a.localeCompare(b);    // sort by dictionary order
     });
-    for(var i = 0; i < combi.length; i++) {
-        combined += `<br/>${combi[i]}`;
-    }
-    //console.log(combi.join("\n"));
+    return finalArr;
 }
 
 //Display all of the relations for each attribute
 const findAttributeClosure = (full, unformattedInput) => {
+    var combinations = substrings(full);
+    var determinedByTemp = [];
     
-    for(var i = 0; i < combi.length; i++) {
-        determinedBy.push(combi[i]);
+    for(var i = 0; i < combinations.length; i++) {
+        determinedByTemp.push(combinations[i]);
     }
-
     // This finds all of the single letter closures
     for(var i = 0; i < unformattedInput.length; i++) {
-        index = combi.indexOf(unformattedInput[i][0]);
-        determinedBy[index] += unformattedInput[i][1];
-        
-        determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
-        determinedBy[index] = sortString(determinedBy[index]);
-
-
-        //document.getElementById("val3").innerHTML = 'hi';
-        //document.getElementById("val3").innerHTML = 'hi';
-        //determinedBy[i].sort();
-        
+        index = combinations.indexOf(unformattedInput[i][0]);
+        determinedByTemp[index] += unformattedInput[i][1];
+        determinedByTemp[index] = removeDuplicateCharacters(determinedByTemp[index]);
+        determinedByTemp[index] = sortString(determinedByTemp[index]);
     }
-
-/*      
-    Also make a loop that adds to the one below that cahnges the if statement to 
-    check for any possible combination of unformattedInput[i][0]
-*/
-
-
     for(var i= 0; i < unformattedInput.length; i++) {
         for(var j= 0; j < unformattedInput.length; j++) {
             if(includesInAnyOrder(unformattedInput[i][0], unformattedInput[j][1])) {
-            //if(unformattedInput[j][1].includes(unformattedInput[i][0])) {
-            
-            
-            //if(unformattedInput[i][0] === unformattedInput[j][1]) {
-                index = combi.indexOf(unformattedInput[j][0]);
-                determinedBy[index] += unformattedInput[i][1];
-                determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
-                determinedBy[index] = sortString(determinedBy[index]);
-                //append unformattedInput[i][1] to the closure of fdjs lhs
+                index = combinations.indexOf(unformattedInput[j][0]);
+                determinedByTemp[index] += unformattedInput[i][1];
+                determinedByTemp[index] = removeDuplicateCharacters(determinedByTemp[index]);
+                determinedByTemp[index] = sortString(determinedByTemp[index]);
             }
-            // if(lhs of fdi === rhs of fdj) {
-            //     append rhs of fdi to the closure of fdjs lhs
-            // }
         }
     }
-
-    /*for(var i= 0; i < unformattedInput.length; i++) {
-        for(var j= 0; j < unformattedInput[i][0].length; j++) {
-            for(var k= 0; k < unformattedInput[i][0].length; k++) {
-                let substring = unformattedInput[i][0].substring(j, k);
-                if(includesInAnyOrder(substring, unformattedInput[i][1])) {
-                    var start = unformattedInput[i][0].indexOf(substring);
-                    var end = start + substring.length;
-                    var tempAddition = unformattedInput[i][0].substring(0, start - 1) + unformattedInput[i][0].substring(end);
-                    index = combi.indexOf(tempAddition);
-                    determinedBy[index] += unformattedInput[i][1];
-                    determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
-                    determinedBy[index] = sortString(determinedBy[index]);
-                }
+    for(var i= 0; i < combinations.length; i++) {
+        for(var j= 0; j < combinations.length; j++) {
+            if(includesInAnyOrder(combinations[i], determinedByTemp[j])) {
+                determinedByTemp[j] += determinedByTemp[i];
+                determinedByTemp[j] = removeDuplicateCharacters(determinedByTemp[j]);
+                determinedByTemp[j] = sortString(determinedByTemp[j]);
             }
-        }
-    }*/
-
-    for(var i= 0; i < combi.length; i++) {
-        for(var j= 0; j < combi.length; j++) {
-            if(includesInAnyOrder(combi[i], determinedBy[j])) {
-            //if(unformattedInput[i][0] === unformattedInput[j][1]) {
-                // index = combi.indexOf(combi[j]);
-                determinedBy[j] += determinedBy[i];
-                determinedBy[j] = removeDuplicateCharacters(determinedBy[j]);
-                determinedBy[j] = sortString(determinedBy[j]);
-                //append unformattedInput[i][1] to the closure of fdjs lhs
-            }
-            // if(lhs of fdi === rhs of fdj) {
-            //     append rhs of fdi to the closure of fdjs lhs
-            // }
         }
     }
-
-    for(var i = 0; i < combi.length; i++) {
-        if(combi[i].length > 1) {
-            for(var j = 0; j < combi[i].length; j++) {
-                let tempChar = combi[i].charAt(j);
-                for(var k = 0; k < combi.length; k++) {
-                    if(combi[k] === tempChar) {
+    for(var i = 0; i < combinations.length; i++) {
+        if(combinations[i].length > 1) {
+            for(var j = 0; j < combinations[i].length; j++) {
+                let tempChar = combinations[i].charAt(j);
+                for(var k = 0; k < combinations.length; k++) {
+                    if(combinations[k] === tempChar) {
                         index = k;
                     }
                 } 
-                determinedBy[i] += determinedBy[index];
+                determinedByTemp[i] += determinedByTemp[index];
             }
-            determinedBy[i] = removeDuplicateCharacters(determinedBy[i]);
-            determinedBy[i] = sortString(determinedBy[i]);
+            determinedByTemp[i] = removeDuplicateCharacters(determinedByTemp[i]);
+            determinedByTemp[i] = sortString(determinedByTemp[i]);
         }
     }
-
-
-    let lengths = '';
-    for(var i = 0; i < combi.length; i++) {
-        if(determinedBy[i] === full) {
-            lengths+=(combi[i].length).toString();
+    return determinedByTemp;
+}
+let primeAttributes = '';
+let lengths = [];
+let candidateKeys = [];
+const displayClosure = (full) => {
+    for(var i = 0; i < this.combi.length; i++) {
+        if(this.determinedBy[i] === full) {
+            lengths.push(this.combi[i].length);
         }  
     }
-
-
-
-    for(var i = 0; i < combi.length; i++) {
-        
-        closuresStr += `<br/>(${combi[i]})﹢ -> ${determinedBy[i]}`; 
-        if(determinedBy[i] === full) {
-            if(combi[i].length == lengths.charAt(0)) {
-                primes += combi[i];
-                closuresStr += ` --> Candidate Key`;
+    for(var i = 0; i < this.combi.length; i++) {
+        this.closuresStr += `<br/>(${this.combi[i]})﹢ -> ${this.determinedBy[i]}`; 
+        if(this.determinedBy[i] === full) {
+            if(this.combi[i].length == lengths[0]) {
+                primeAttributes += this.combi[i].toString(); 
+                candidateKeys.push(this.combi[i]);
+                this.closuresStr += ` --> Candidate Key`;
             } else {
-                closuresStr += ` --> Superkey`;
+                this.closuresStr += ` --> Superkey`;
             }
-        }      
-        
-    
+        }   
     }
-
-
-    
 }
 
-const findPrimes = (full, unformattedInput) => {
+const displayPrimes = (full) => {
     let tempFull = full;
-    primes = removeDuplicateCharacters(primes);
-    primes = sortString(primes);
-    for(var i = 0; i < full.length; i++) {
-        tempFull = tempFull.replace(primes[i], '');
-        notPrimes = tempFull;
+    primeAttributes = removeDuplicateCharacters(primeAttributes);
+    primeAttributes = sortString(primeAttributes);
+    // for(var i = 0; i < full.length; i++) {
+    //     tempFull = tempFull.replace(primes.charAt(i), '');
+    //     notPrimes = tempFull;
+    // }
+    for(var i = 0; i < primeAttributes.length; i++) {
+        if(full.indexOf(primeAttributes.charAt(i)) != -1) {
+            tempFull = tempFull.replace(primeAttributes.charAt(i), '');
+            notPrimes = tempFull;
+        }
     }
-    primes = primes.split('').join(', ');
+    primeAttributes = primeAttributes.split('').join(', ');
     notPrimes = removeDuplicateCharacters(notPrimes);
     notPrimes = sortString(notPrimes);
     notPrimes = notPrimes.split('').join(', ');
-    primesOutput += `<br/>All prime attributes: ${primes}`;
+    primesOutput += `<br/>All prime attributes: ${primeAttributes}`;
     primesOutput += `<br/>All non-prime attributes: ${notPrimes}`;
 }
 
@@ -298,7 +257,7 @@ const calculateCanonicalCover = (full, unformattedInput) => {
     //Step 3: Create attribute closures for the new set of decomposed attributes created by Step 2 
     // Then remove one of the FDs. If the closures of new LHS's are the same without the removed, then remove the FD entirely
     let removedFDs = [];
-    var tempClosures = new Array(tempCanonicalCover.length-1).fill('');
+    var tempClosures = [];
     let removedCanonicalCover = new Array(tempCanonicalCover.length-1).fill(0).map(() => new Array(2).fill(''));
     for(var m = 0; m < tempCanonicalCover.length; m++) {
         if(includesInAnyOrder(tempCanonicalCover[m][1], tempCanonicalCover[m][0])) {
@@ -306,77 +265,8 @@ const calculateCanonicalCover = (full, unformattedInput) => {
         } else {
             //Deletes an FD
             removedCanonicalCover = removeFD(tempCanonicalCover, m);
-            //Reflexivity and all direct FDs
-            for(var i = 0; i < removedCanonicalCover.length; i++) {
-                tempClosures[i] = (removedCanonicalCover[i][0] + removedCanonicalCover[i][1]);
-                tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
-                tempClosures[i] = sortString(tempClosures[i]);
-            }
-            //Check for the first layer of transitivity
-            for(var i= 0; i < removedCanonicalCover.length; i++) {
-                for(var j= 0; j < removedCanonicalCover.length; j++) {
-                    if(includesInAnyOrder(removedCanonicalCover[i][0], removedCanonicalCover[j][1])) {
-                        tempClosures[j] += removedCanonicalCover[i][1];
-                        tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
-                        tempClosures[j] = sortString(tempClosures[j]);
-                    }
-                }
-            }
-            //Check for the remaining layers of transitivity
-            for(var i= 0; i < tempClosures.length; i++) {
-                for(var j= 0; j < tempClosures.length; j++) {
-                    if(includesInAnyOrder(tempClosures[i], tempClosures[j])) {
-                        tempClosures[j] += tempClosures[i];
-                        tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
-                        tempClosures[j] = sortString(tempClosures[j]);
-                    }
-                }
-            }
-            // This appends all the single letter attributes closures to x-
-            //letter attribute closures.
-            for(var i = 0; i < removedCanonicalCover.length; i++) {
-                if(removedCanonicalCover[i][0].length > 1) {
-                    for(var j = 0; j < removedCanonicalCover[i][0].length; j++) {
-                        let tempChar = removedCanonicalCover[i][0].charAt(j);
-                        for(var k = 0; k < removedCanonicalCover.length; k++) {
-                            if(removedCanonicalCover[k][0] === tempChar) {
-                                index = k;
-                            }
-                        } 
-                        tempClosures[i] += tempClosures[index];
-                    }
-                    tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
-                    tempClosures[i] = sortString(tempClosures[i]);
-                }
-            }
-            /*for(var i= 0; i < removedCanonicalCover.length; i++) {
-                for(var j= 0; j < removedCanonicalCover[i][0].length; j++) {
-                    for(var k= 0; k < removedCanonicalCover[i][0].length; k++) {
-                        let substring = removedCanonicalCover[i][0].substring(j, k);
-                        if(includesInAnyOrder(substring, removedCanonicalCover[i][1])) {
-                            var start = removedCanonicalCover[i][0].indexOf(substring);
-                            var end = start + substring.length;
-                            var tempAddition = removedCanonicalCover[i][0].substring(0, start - 1) + removedCanonicalCover[i][0].substring(end);
-                            // index = combi.indexOf(tempAddition);
-                            tempClosures[i] += removedCanonicalCover[i][1];
-                            tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
-                            tempClosures[i] = sortString(tempClosures[i]);
-                        }
-                    }
-                }
-            }*/
-            //Check to see the indices from tempCanonicalCover that need to be removed
-            var needToRemove = true;
-            let canonicalCover = '';
-            for(var i = 0; i < tempClosures.length; i++) {
-                index = combi.indexOf(removedCanonicalCover[i][0]);
-                if(determinedBy[index] == tempClosures[i]) {
-                    needToRemove = needToRemove && true;
-                } else {
-                    needToRemove = needToRemove && false;
-                }
-            }
-            if(needToRemove) {
+            tempClosures = findAttributeClosure(full, removedCanonicalCover);
+            if(JSON.stringify(tempClosures) == JSON.stringify(this.determinedBy)) {
                 removedFDs.push(m);
             }
         }
@@ -392,19 +282,7 @@ const calculateCanonicalCover = (full, unformattedInput) => {
             w++;
         }
     }
-    
-    
-
-    // for(var i = 0; i < tempCanonicalCover.length; i++) {   
-    //     canonicalCover += `<br/>${tempCanonicalCover[i][0]} -> ${tempCanonicalCover[i][1]}`; 
-    // }
-    // canonicalCover += `<br/>`;
-    // for(var i = 0; i < removedCanonicalCover.length; i++) {   
-    //     canonicalCover += `<br/>${removedCanonicalCover[i][0]} -> ${removedCanonicalCover[i][1]} + ${tempClosures[i]}`; 
-    // }
-    // document.getElementById("val5").innerHTML = `${canonicalCover}`;
-    // break;
-
+        
 
     
     
@@ -428,158 +306,39 @@ const calculateCanonicalCover = (full, unformattedInput) => {
         return a.indexOf(e, i+1) === -1;
     }).reverse().map(JSON.parse);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    /*
-    let tempUniqueElemsClosures = [];
-    var uniqueElemsClosures = [];
-    var uniqueElems = []; 
-    var reducedCover = tempCanonicalCover;
-    for(var i = 0; i < tempCanonicalCover.length; i++) {
-        uniqueElems[i] = tempCanonicalCover[i][0];
-    }
-    
-    uniqueElems = uniqueElems.filter(distinct);
-    for(var i = 0; i < tempCanonicalCover.length; i++) {
-        uniqueElemsClosures[i] = determinedBy[combi.indexOf(uniqueElems[i])];
-    }
-    let removedCanonicalCover = new Array(totLength-1).fill(0).map(() => new Array(2).fill(''));
-   
-    for(var m = 0; m < tempCanonicalCover.length; m++) {
-        removedCanonicalCover = deleteRow(tempCanonicalCover, m); 
-        //document.getElementById("val8").innerHTML = `${m} <br/>${tempCanonicalCover}`;
-        // This calculates a tempCanonicalCover
-        for(var i = 0; i < removedCanonicalCover.length; i++) {
-            index = uniqueElems.indexOf(removedCanonicalCover[i][0]);
-            tempUniqueElemsClosures[index] = '';
-            tempUniqueElemsClosures[index] += removedCanonicalCover[i][1];
-            tempUniqueElemsClosures[index] = removeDuplicateCharacters(tempUniqueElemsClosures[index]);
-            tempUniqueElemsClosures[index] = sortString(tempUniqueElemsClosures[index]);
-        }
+    //Check once more for extra RHS attributes
+    // let smallerRHS = '';
+    // for(var i = 0; i < finalDecomposedCanonicalCover.length; i++) {
         
-        for(var i= 0; i < removedCanonicalCover.length; i++) {
-            for(var j= 0; j < removedCanonicalCover.length; j++) {
-                //document.getElementById("val5").innerHTML = `${removedCanonicalCover[i][0]} ${removedCanonicalCover[j][1]}`;
-                if(includesInAnyOrder(removedCanonicalCover[i][0], removedCanonicalCover[j][1])) {
-                    
-                    index = uniqueElems.indexOf(removedCanonicalCover[j][0]);
-                    tempUniqueElemsClosures[index] += removedCanonicalCover[i][1];
-                    tempUniqueElemsClosures[index] = removeDuplicateCharacters(tempUniqueElemsClosures[index]);
-                    tempUniqueElemsClosures[index] = sortString(tempUniqueElemsClosures[index]);
-                    //append unformattedInput[i][1] to the closure of fdjs lhs
-                }
-                // if(lhs of fdi === rhs of fdj) {
-                //     append rhs of fdi to the closure of fdjs lhs
-                // }
-            }
-        }
-        // document.getElementById("val5").innerHTML = `hi ${tempCanonicalCover.toString()}<br/><br/>${removedCanonicalCover.toString()}`;
-        for(var i= 0; i < uniqueElems.length; i++) {
-            let qu = 0;
-            
-            while(true) {
-                
-                // document.getElementById("val5").innerHTML = `hi  ${qu} `;
-                // document.getElementById("val5").innerHTML = `hi  ${qu} ${tempUniqueElemsClosures[qu]} ${uniqueElems[i]}`;
-                if(includesInAnyOrder(uniqueElems[i], tempUniqueElemsClosures[qu])) {
-                //if(unformattedInput[i][0] === unformattedInput[j][1]) {
-                    // index = combi.indexOf(combi[j]);
-                    
-                    tempUniqueElemsClosures[qu] += tempUniqueElemsClosures[i];
-                    tempUniqueElemsClosures[qu] = removeDuplicateCharacters(tempUniqueElemsClosures[qu]);
-                    tempUniqueElemsClosures[qu] = sortString(tempUniqueElemsClosures[qu]);
-                    //append unformattedInput[i][1] to the closure of fdjs lhs
-                    
-                }
-                
-                qu+=1;
-                // document.getElementById("val5").innerHTML = `hi `;
-                if(qu >= tempUniqueElemsClosures.length) {
-                    
-                    break;
-                }
-                
-            }
-        }
-        
-        for(var i = 0; i < uniqueElems.length; i++) {
-            if(uniqueElems[i].length > 1) {
-                for(var j = 0; j < uniqueElems[i].length; j++) {
-                    let tempChar = uniqueElems[i].charAt(j);
-                    for(var k = 0; k < uniqueElems.length; k++) {
-                        if(uniqueElems[k] === tempChar) {
-                            index = k;
-                        }
-                    } 
-                    tempUniqueElemsClosures[i] += tempUniqueElemsClosures[index];
-                }
-                tempUniqueElemsClosures[i] = removeDuplicateCharacters(tempUniqueElemsClosures[i]);
-                tempUniqueElemsClosures[i] = sortString(tempUniqueElemsClosures[i]);
-            
-            }
-        }
-        
-        for(var i = 0; i < uniqueElems.length; i++) {
-            if(uniqueElemsClosures[i] == tempUniqueElemsClosures[i]) {
-                tempCanonicalCover = removedCanonicalCover;
-            }
-        }
-    }
-    // for(var i = 0; i < uniqueElems.length; i++) {
-    //     tempUniqueElemsClosures = tempUniqueElemsClosures.filter(x => x !== undefined);
-    // }
-
-    finalCanonicalCover = new Array(tempCanonicalCover.length).fill(0).map(() => new Array(2).fill(''));
-    for(var i = 0; i < tempCanonicalCover.length; i++) {
-        finalCanonicalCover[i][0] = tempCanonicalCover[i][0];
-    }
-    
-    // Step 4: Consolidate all the FDs with the same LHS
-    for(var i = 0; i < tempCanonicalCover.length; i++) {
-        for(var j = i; j < tempCanonicalCover.length; j++) {
-            if(tempCanonicalCover[i][0] == tempCanonicalCover[j][0]) {
-                index = uniqueElems.indexOf(tempCanonicalCover[i][0]);
-                finalCanonicalCover[index][1] += `${tempCanonicalCover[i][1]}${tempCanonicalCover[j][1]}`;
-                finalCanonicalCover[index][1] = removeDuplicateCharacters(finalCanonicalCover[index][1]);
-                finalCanonicalCover[index][1] = sortString(finalCanonicalCover[index][1]);
-            }
-        }
-    }*/
-    // for(all of the split fds) {
-    //     for(all of the split fds) {
-    //         if(LHSof FD[i] == LHSofFD[j]) {
-    //             combine the RHS's of both 
+    //     for(var j = 0; j < finalDecomposedCanonicalCover[i][1].length; j++) {
+    //         var doesInclude = false;
+    //         if(finalDecomposedCanonicalCover[i][1].length > 1) {
+    //             smallerRHS = removeCharacter(finalDecomposedCanonicalCover[i][1], j);//`${tempCanonicalCover[i][0].substring(0, j)}${tempCanonicalCover[i][0].substring(j+1)}`; 
+    //             smallerRHS = sortString(smallerRHS);
+    //             if(determinedBy[combi.indexOf(finalDecomposedCanonicalCover[i][1])] == determinedBy[combi.indexOf(smallerRHS)]) {
+    //                 doesInclude = true;
+    //             }
+    //         }
+    //         if(doesInclude) {
+    //             finalDecomposedCanonicalCover[i][1] = smallerRHS;
     //         }
     //     }
+        
     // }
-    
+    // finalDecomposedCanonicalCover = finalDecomposedCanonicalCover.map(JSON.stringify).reverse().filter(function (e, i, a) {
+    //     return a.indexOf(e, i+1) === -1;
+    // }).reverse().map(JSON.parse);
+
+
+
+
+
     // Print Fmin
+    // canonicalCover = `<br/>The canonical or minimum spanning cover for this relation is: `
+    // for(var i = 0; i < tempCanonicalCover.length; i++) {   
+    //     canonicalCover += `<br/>${tempCanonicalCover[i][0]} -> ${tempCanonicalCover[i][1]}`; 
+    // }
+    // canonicalCover += removedFDs;
     canonicalCover = `<br/>The canonical or minimum spanning cover for this relation is: `
     for(var i = 0; i < finalDecomposedCanonicalCover.length; i++) {   
         canonicalCover += `<br/>${finalDecomposedCanonicalCover[i][0]} -> ${finalDecomposedCanonicalCover[i][1]}`; 
@@ -641,6 +400,60 @@ const thirdNormalForm = (full, unformattedInput) => {
         }
     }
 }
+
+const calculateHighestNormalForm = (full, unformattedInput) => {
+    is1NF = findIs1NF(full, unformattedInput);
+    is2NF = findIs2NF(full, unformattedInput);
+    is3NF = findIs3NF(full, unformattedInput);
+}
+const findIs1NF = (full, unformattedInput) => {
+    highestNormalForm += 'The relation is assumed to be in First Normal Form. <br/>';
+    return true; 
+}
+const findIs2NF = (full, unformattedInput) => {
+    let tempNotPrimes = notPrimes.split(', ').join('');
+    if(is1NF) {
+        if(candidateKeys[0].length == 1) {
+            highestNormalForm += 'The relation is in Second Normal Form.<br/>';
+            return true;
+        } else {
+            for(var i = 0; i < candidateKeys.length; i++) {
+                let tempProperSubsets = substrings(candidateKeys[i]);
+                tempProperSubsets.pop();
+                for(var j = 0; j < tempProperSubsets.length; j++) {
+                    for(var k = 0; k < tempNotPrimes.length; k++) {
+                        if(determinedBy[combi.indexOf(tempProperSubsets[j])].includes(tempNotPrimes.charAt(k))) {
+                            highestNormalForm += 'The relation is not in Second Normal Form.<br/>';
+                            return false;
+                        }
+                    }
+                }
+            }
+        }
+    } 
+    highestNormalForm += `The relation is in Second Normal Form.<br/>`;
+    return true;
+}
+
+const findIs3NF = (full, unformattedInput) => {
+    let isthreeNF = true;
+    let tempPrimes = primeAttributes.split(', ').join('');
+    if(is2NF) {
+        for(var i = 0; i < unformattedInput.length; i++) {
+            isthreeNF = isthreeNF && (determinedBy[combi.indexOf(unformattedInput[i][0])] == full || includesInAnyOrder(unformattedInput[i][1], tempPrimes));
+        }
+    } else {
+        highestNormalForm += 'The relation is not in Third Normal Form.<br/>';
+        return false;
+    }
+    if(isthreeNF) {
+        highestNormalForm += 'The relation is in Third Normal Form.<br/>';
+    } else {
+        highestNormalForm += 'The relation is not in Third Normal Form.<br/>';
+    }
+    return isthreeNF;
+}
+
 
 /*const BCNF = (full, unformattedInput) => {
     let FDsViolate = false;
@@ -789,3 +602,258 @@ function substringsCombs(string)
     }
     return results;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// //Display all of the relations for each attribute
+// const findAttributeClosure = (full, unformattedInput) => {
+//     combi = substrings(full);
+    
+//     for(var i = 0; i < combi.length; i++) {
+//         determinedBy.push(combi[i]);
+//     }
+//     // This finds all of the single letter closures
+//     for(var i = 0; i < unformattedInput.length; i++) {
+//         index = combi.indexOf(unformattedInput[i][0]);
+//         determinedBy[index] += unformattedInput[i][1];
+//         determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
+//         determinedBy[index] = sortString(determinedBy[index]);
+//     }
+//     for(var i= 0; i < unformattedInput.length; i++) {
+//         for(var j= 0; j < unformattedInput.length; j++) {
+//             if(includesInAnyOrder(unformattedInput[i][0], unformattedInput[j][1])) {
+//             //if(unformattedInput[j][1].includes(unformattedInput[i][0])) {
+            
+            
+//             //if(unformattedInput[i][0] === unformattedInput[j][1]) {
+//                 index = combi.indexOf(unformattedInput[j][0]);
+//                 determinedBy[index] += unformattedInput[i][1];
+//                 determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
+//                 determinedBy[index] = sortString(determinedBy[index]);
+//                 //append unformattedInput[i][1] to the closure of fdjs lhs
+//             }
+//             // if(lhs of fdi === rhs of fdj) {
+//             //     append rhs of fdi to the closure of fdjs lhs
+//             // }
+//         }
+//     }
+
+//     /*for(var i= 0; i < unformattedInput.length; i++) {
+//         for(var j= 0; j < unformattedInput[i][0].length; j++) {
+//             for(var k= 0; k < unformattedInput[i][0].length; k++) {
+//                 let substring = unformattedInput[i][0].substring(j, k);
+//                 if(includesInAnyOrder(substring, unformattedInput[i][1])) {
+//                     var start = unformattedInput[i][0].indexOf(substring);
+//                     var end = start + substring.length;
+//                     var tempAddition = unformattedInput[i][0].substring(0, start - 1) + unformattedInput[i][0].substring(end);
+//                     index = combi.indexOf(tempAddition);
+//                     determinedBy[index] += unformattedInput[i][1];
+//                     determinedBy[index] = removeDuplicateCharacters(determinedBy[index]);
+//                     determinedBy[index] = sortString(determinedBy[index]);
+//                 }
+//             }
+//         }
+//     }*/
+
+//     for(var i= 0; i < combi.length; i++) {
+//         for(var j= 0; j < combi.length; j++) {
+//             if(includesInAnyOrder(combi[i], determinedBy[j])) {
+//             //if(unformattedInput[i][0] === unformattedInput[j][1]) {
+//                 // index = combi.indexOf(combi[j]);
+//                 determinedBy[j] += determinedBy[i];
+//                 determinedBy[j] = removeDuplicateCharacters(determinedBy[j]);
+//                 determinedBy[j] = sortString(determinedBy[j]);
+//                 //append unformattedInput[i][1] to the closure of fdjs lhs
+//             }
+//             // if(lhs of fdi === rhs of fdj) {
+//             //     append rhs of fdi to the closure of fdjs lhs
+//             // }
+//         }
+//     }
+
+//     for(var i = 0; i < combi.length; i++) {
+//         if(combi[i].length > 1) {
+//             for(var j = 0; j < combi[i].length; j++) {
+//                 let tempChar = combi[i].charAt(j);
+//                 for(var k = 0; k < combi.length; k++) {
+//                     if(combi[k] === tempChar) {
+//                         index = k;
+//                     }
+//                 } 
+//                 determinedBy[i] += determinedBy[index];
+//             }
+//             determinedBy[i] = removeDuplicateCharacters(determinedBy[i]);
+//             determinedBy[i] = sortString(determinedBy[i]);
+//         }
+//     }
+
+
+//     let lengths = '';
+//     for(var i = 0; i < combi.length; i++) {
+//         if(determinedBy[i] === full) {
+//             lengths+=(combi[i].length).toString();
+//         }  
+//     }
+
+
+
+//     for(var i = 0; i < combi.length; i++) {
+        
+//         closuresStr += `<br/>(${combi[i]})﹢ -> ${determinedBy[i]}`; 
+//         if(determinedBy[i] === full) {
+//             if(combi[i].length == lengths.charAt(0)) {
+//                 primes += combi[i];
+//                 closuresStr += ` --> Candidate Key`;
+//             } else {
+//                 closuresStr += ` --> Superkey`;
+//             }
+//         }      
+        
+    
+//     }
+
+
+    
+// }
+
+// const findPrimes = (full, unformattedInput) => {
+//     let tempFull = full;
+//     primes = removeDuplicateCharacters(primes);
+//     primes = sortString(primes);
+//     for(var i = 0; i < full.length; i++) {
+//         tempFull = tempFull.replace(primes[i], '');
+//         notPrimes = tempFull;
+//     }
+//     primes = primes.split('').join(', ');
+//     notPrimes = removeDuplicateCharacters(notPrimes);
+//     notPrimes = sortString(notPrimes);
+//     notPrimes = notPrimes.split('').join(', ');
+//     primesOutput += `<br/>All prime attributes: ${primes}`;
+//     primesOutput += `<br/>All non-prime attributes: ${notPrimes}`;
+// }
+
+
+
+
+
+
+
+//Step 3 of canonical cover
+// let removedFDs = [];
+//     var tempClosures = new Array(tempCanonicalCover.length-1).fill('');
+//     let removedCanonicalCover = new Array(tempCanonicalCover.length-1).fill(0).map(() => new Array(2).fill(''));
+//     for(var m = 0; m < tempCanonicalCover.length; m++) {
+//         if(includesInAnyOrder(tempCanonicalCover[m][1], tempCanonicalCover[m][0])) {
+//             removedFDs.push(m);
+//         } else {
+//             //Deletes an FD
+//             removedCanonicalCover = removeFD(tempCanonicalCover, m);
+//             //Reflexivity and all direct FDs
+//             for(var i = 0; i < removedCanonicalCover.length; i++) {
+//                 tempClosures[i] = (removedCanonicalCover[i][0] + removedCanonicalCover[i][1]);
+//                 tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+//                 tempClosures[i] = sortString(tempClosures[i]);
+//             }
+//             //Check for the first layer of transitivity
+//             for(var i= 0; i < removedCanonicalCover.length; i++) {
+//                 for(var j= 0; j < removedCanonicalCover.length; j++) {
+//                     if(includesInAnyOrder(removedCanonicalCover[i][0], removedCanonicalCover[j][1])) {
+//                         tempClosures[j] += removedCanonicalCover[i][1];
+//                         tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
+//                         tempClosures[j] = sortString(tempClosures[j]);
+//                     }
+//                 }
+//             }
+//             //Check for the remaining layers of transitivity
+//             for(var i= 0; i < tempClosures.length; i++) {
+//                 for(var j= 0; j < tempClosures.length; j++) {
+//                     if(includesInAnyOrder(tempClosures[i], tempClosures[j])) {
+//                         tempClosures[j] += tempClosures[i];
+//                         tempClosures[j] = removeDuplicateCharacters(tempClosures[j]);
+//                         tempClosures[j] = sortString(tempClosures[j]);
+//                     }
+//                 }
+//             }
+//             // This appends all the single letter attributes closures to x-
+//             //letter attribute closures.
+//             for(var i = 0; i < removedCanonicalCover.length; i++) {
+//                 if(removedCanonicalCover[i][0].length > 1) {
+//                     for(var j = 0; j < removedCanonicalCover[i][0].length; j++) {
+//                         let tempChar = removedCanonicalCover[i][0].charAt(j);
+//                         for(var k = 0; k < removedCanonicalCover.length; k++) {
+//                             if(removedCanonicalCover[k][0] === tempChar) {
+//                                 index = k;
+//                             }
+//                         } 
+//                         tempClosures[i] += tempClosures[index];
+//                     }
+//                     tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+//                     tempClosures[i] = sortString(tempClosures[i]);
+//                 }
+//             }
+//             /*for(var i= 0; i < removedCanonicalCover.length; i++) {
+//                 for(var j= 0; j < removedCanonicalCover[i][0].length; j++) {
+//                     for(var k= 0; k < removedCanonicalCover[i][0].length; k++) {
+//                         let substring = removedCanonicalCover[i][0].substring(j, k);
+//                         if(includesInAnyOrder(substring, removedCanonicalCover[i][1])) {
+//                             var start = removedCanonicalCover[i][0].indexOf(substring);
+//                             var end = start + substring.length;
+//                             var tempAddition = removedCanonicalCover[i][0].substring(0, start - 1) + removedCanonicalCover[i][0].substring(end);
+//                             // index = combi.indexOf(tempAddition);
+//                             tempClosures[i] += removedCanonicalCover[i][1];
+//                             tempClosures[i] = removeDuplicateCharacters(tempClosures[i]);
+//                             tempClosures[i] = sortString(tempClosures[i]);
+//                         }
+//                     }
+//                 }
+//             }*/
+//             //Check to see the indices from tempCanonicalCover that need to be removed
+//             var needToRemove = true;
+//             let canonicalCover = '';
+//             for(var i = 0; i < tempClosures.length; i++) {
+//                 index = combi.indexOf(removedCanonicalCover[i][0]);
+//                 if(determinedBy[index] == tempClosures[i]) {
+//                     needToRemove = needToRemove && true;
+//                 } else {
+//                     needToRemove = needToRemove && false;
+//                 }
+//             }
+//             if(needToRemove) {
+//                 removedFDs.push(m);
+//             }
+//         }
+//     }
+//     let numOfFDs = tempCanonicalCover.length - removedFDs.length;
+    
+//     finalDecomposedCanonicalCover = new Array(numOfFDs).fill(0).map(() => new Array(2).fill(''));
+//     let w = 0
+//     for(var i = 0; i < tempCanonicalCover.length; i++) {
+//         if(!(removedFDs.includes(i))) {
+//             finalDecomposedCanonicalCover[w][0] = tempCanonicalCover[i][0];
+//             finalDecomposedCanonicalCover[w][1] = tempCanonicalCover[i][1];
+//             w++;
+//         }
+//     }
+    
+
+
+//     // for(var i = 0; i < tempCanonicalCover.length; i++) {   
+//     //     canonicalCover += `<br/>${tempCanonicalCover[i][0]} -> ${tempCanonicalCover[i][1]}`; 
+//     // }
+//     // canonicalCover += `<br/>`;
+//     // for(var i = 0; i < removedCanonicalCover.length; i++) {   
+//     //     canonicalCover += `<br/>${removedCanonicalCover[i][0]} -> ${removedCanonicalCover[i][1]} + ${tempClosures[i]}`; 
+//     // }
+//     // document.getElementById("val5").innerHTML = `${canonicalCover}`;
+//     // break;
