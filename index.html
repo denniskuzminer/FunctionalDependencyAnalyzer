@@ -24,6 +24,7 @@
                 <li><a href="#CanonicalCover" class="option">Canonical Cover</a></li>
                 <li><a href="#HighestNormalizedForm" class="option">Highest Normalized Form</a></li>
                 <li><a href="#3NFDecomposition" class="option">3NF Decomposition</a></li>
+                <li><a href="#Methodology" class="option">Methodology</a></li>
             </ul>
         </div>
         <div class="main" id="main">
@@ -65,9 +66,9 @@
                     const val = document.getElementById("userInput").value;
                     const full = document.getElementById("full").value;
                     if(validateForm(full, val) == 'valid') {
+                        document.getElementById("accordion").style.display="block";
                         document.getElementById("mainSidebar").style.width = "250px";
                         document.getElementById("main").style.marginLeft = "250px";
-                        //document.getElementsByClassName("option").style.width = "100%";
                         document.querySelector("button").onClick = new Calculate(full, val);
                     } else {
                         document.getElementById("val").innerHTML = `${validateForm(full, val)}`;
@@ -78,6 +79,12 @@
                     full = full.split(" ").join("");
                     full = full.toUpperCase();
                     val = val.toUpperCase();
+                    if(full == '') {
+                        return 'Please provide input for the first field.';
+                    }
+                    if(val == '') {
+                        return 'Please provide input for the second field.';
+                    }
                     for(var i = 0; i < full.length; i++) {
                         if(!isLetter(full.charAt(i))) {
                             return 'Please input only uppercase or lowercase letters into the first field.';
@@ -111,14 +118,91 @@
             <a name="3NFDecomposition"></a>
             <p id="val7"></p>
             <p id="val8"></p>
-            
-            <!--<div id="output"></div>
+
+            <br>
+            <a name="Methodology"></a>
+            <div id="accordion">
+                <button class="accordion">
+                    Methodology
+                </button>
+                <div class="panel">
+                    <button class="accordion">
+                        Attribute Closures
+                    </button>
+                    <div class="panel">
+                        Attribute closures are calculated in three steps: <br>
+                        1. Implement the reflexivity rule (A->A) and add the given right-hand sides to the closures of the given left-hand sides. <br>
+                        2. Implement the first layer of transitivity (A->B and B->C; therefore, A->C). <br>
+                        3. Implement the remaining layers of transitivity by unioning sets and check for argumentation (if A->B, then AC->BC for any set of attributes C).
+                    </div>
+                    <button class="accordion">
+                        Prime Attributes
+                    </button>
+                    <div class="panel">
+                        Prime attributes are attributes that are present in any candidate key. <br>
+                        If an attribute is not present in a candidate key, then it is not prime.
+                    </div>
+                    <button class="accordion">
+                        Canonical Cover
+                    </button>
+                    <div class="panel">
+                        The canonical cover is calculated in four steps: <br>
+                        1. Split all of the FDs with a right-hand side with more than one attribute, keeping the left-hand side (For example, AB->EFG becomes AB->E, AB->F, AB->G). <br>
+                        2. Remove all unnecessary left-hand side attributes. If the left-hand side can determine the right-hand side without a particular attribute X, then X is not needed. <br>
+                        3. Remove all unnecessary FDs from the new set of FDs that were created from Steps 1 <br> and 2. If all the attribute closures are the same after removal of some FD, then that FD is not needed. <br>
+                        4. Combine the right-hand sides of FDs with the same left-hand side (For example, AB->E, AB->F becomes AB->EF).
+                    </div>
+                    <button class="accordion">
+                        Highest Normalized Form
+                    </button>
+                    <div class="panel">
+                        1NF - A relation is in First Normal Form if attributes are single valued, attribute domains do not change, each attribute has a unique name, and the order in which data is stored does not matter. <br>
+                        Relations inputted into this tool are assumed to be in 1NF. <br>
+                        2NF - A relation is in Second Normal Form if it is in 1NF and if there are no partial dependancies. This means that the closures of any proper subsets of candidate keys should not contain any non-prime attributes. <br>
+                        If the candidate key of the relation is not composite (a length of 1), then it is in 2NF. <br>
+                        3NF - A relation is in Third Normal Form if it is in 2NF and if each given FD satisfies one the two conditions: the left-hand side is a superkey of the relation or the right-hand side is comprised of prime attributes. <br>
+                    </div>
+                    <button class="accordion">
+                        Third Normal Form Decomposition
+                    </button>
+                    <div class="panel">
+                        The third normal form decomposition is calculated in three steps: <br>
+                        1. Combine all the left and right-hand sides of the canonical cover. Make these into relations. <br>
+                        2. Delete redundant tables that are subsets of other tables (For example, if R1 = ABCD and R2 = AB, R2 is redundant). <br>
+                        3. If none of the newly created tables are superkeys of the initial relation, then create another table that contains a superkey of the original relation.
+                    </div>
+                </div>
+            </div>
             <script>
-                document.getElementById("output").innerHTML = calc;
-            </script>-->
+                var accordions = document.querySelectorAll("button.accordion");
+
+                for (var i = 0; i < accordions.length; i++) {
+                    accordions[i].onclick = function() {
+                        this.classList.toggle("active");
+                        this.nextElementSibling.classList.toggle("show");
+                    };
+                }
+
+                function closeAll() {
+                    for (var i = 0; i < accordions.length; i++) {
+                        accordions[i].classList.remove("active");
+                        accordions[i].nextElementSibling.classList.remove("show");
+                    }
+                }
+            </script>
+            
+
+
         </div>
-        <div id="todo">
-            To-Do in future updates: 
+        <div class="todo">
+            <div class="sidebarTitle">More Example Inputs:</div>
+            <ul>
+                <li>JKLMNP with FDs: J->KLM;KL->MN;K->M;M->J</li>
+                <li>ABCDEG with FDs: A->BDG;BG->DE;B->D;D->A</li>
+                <li>JKLMNP with FDs: J->KL;L->J;MNP->K;KP->M;LJ->N</li>
+            </ul>
+            <br>
+            <div class="sidebarTitle">To-Do in future updates:</div>
             <ul>
                 <li id="l1">Show all non-trivial functional dependancies that can be derived</li>
                 <li id="l2">Show whether relation is in 1NF, 2NF, 3NF, and/or BCNF</li>
